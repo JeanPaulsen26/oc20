@@ -9,8 +9,8 @@ pygame.mixer.init() # initialiser mixer
 pygame.font.init() # initialiser font
 
 # taille écran
-w = 1080
-h = 720
+#w = 1080
+#h = 720
 
 
 class Game:
@@ -21,8 +21,9 @@ class Game:
         self.player = Player(self) # générer joueur
         self.all_players.add(self.player)
         self.comet_event = CometFallEvent(self) #générer événement comet
-        self.all_monsters = pygame.sprite.Group() # groupe monstre
+        self.all_astros = pygame.sprite.Group() # groupe astronautes
         self.score = 0
+        #self.best_score = 0
         self.sound_manager = SoundManager()
         self.font = pygame.font.Font("assets/font.ttf", 20)
         self.pressed = {} # touche activé par joueur
@@ -30,15 +31,18 @@ class Game:
     
     def start(self):
         self.is_playing = True
-        self.spawn_monster()
-        self.spawn_monster()
+        self.spawn_astro()
+        self.spawn_astro()
         
     def add_score(self, points):
         self.score += points
+    
+    #def saving_best_score(self, points):
+        
         
     def game_over(self):
         # restart game
-        self.all_monsters = pygame.sprite.Group()
+        self.all_astros = pygame.sprite.Group()
         self.comet_event.all_comets = pygame.sprite.Group()
         self.player.pv = self.player.max_pv
         self.comet_event.reset_percent()
@@ -65,9 +69,9 @@ class Game:
             projectile.move()
         
         # mouvement monstre
-        for monster in self.all_monsters:
-            monster.forward()
-            monster.update_pv_bar(screen) # afficher health bar
+        for astro in self.all_astros:
+            astro.forward()
+            astro.update_pv_bar(screen) # afficher health bar
             
         # chutes des cometes afficher
         for comet in self.comet_event.all_comets:
@@ -76,7 +80,7 @@ class Game:
         self.player.all_projectiles.draw(screen)
     
         # appliquer images groupe monstre
-        self.all_monsters.draw(screen)
+        self.all_astros.draw(screen)
         
         # appliquer image groupe cometes
         self.comet_event.all_comets.draw(screen)
@@ -95,9 +99,9 @@ class Game:
         # régler collision 
         return pygame.sprite.spritecollide(sprite, group, False, pygame.sprite.collide_mask)
     
-    def spawn_monster(self):
-        monster = Monster(self)
-        self.all_monsters.add(monster)
+    def spawn_astro(self):
+        astro = Astro(self)
+        self.all_astros.add(astro)
         
 
 class Player(pygame.sprite.Sprite): # class sprite: élément graphique
@@ -140,7 +144,7 @@ class Player(pygame.sprite.Sprite): # class sprite: élément graphique
     # mouvement
     def move_r(self):
         # si 0 collision 
-        if not self.game.check_collision(self, self.game.all_monsters):
+        if not self.game.check_collision(self, self.game.all_astros):
             self.rect.x += self.speed
         
         #supprimer projectile plus présent
@@ -182,14 +186,14 @@ class Projectile(pygame.sprite.Sprite):
         self.rotation()
         
         # si 0 collision
-        for monster in self.player.game.check_collision(self, self.player.game.all_monsters):
+        for astro in self.player.game.check_collision(self, self.player.game.all_astros):
             # delete projectile
             self.remove()
             # infliger dégat
-            monster.damage(self.player.attack)
+            astro.damage(self.player.attack)
 
 
-class Monster(pygame.sprite.Sprite):
+class Astro(pygame.sprite.Sprite):
     
     def __init__(self, game):
         super().__init__()
@@ -221,7 +225,7 @@ class Monster(pygame.sprite.Sprite):
             # vérifier si event bar au max et tout les monstres sont mort
             if self.game.comet_event.full_loaded():
                 # retirer du jeu
-                self.game.all_monsters.remove(self)
+                self.game.all_astros.remove(self)
                 self.game.comet_event.attempt_fall() # pluie de comète activer
            
             # rajouter pv au joueur
@@ -229,7 +233,7 @@ class Monster(pygame.sprite.Sprite):
                 self.game.player.pv += 5
         
     def update_pv_bar(self, surface):
-        # définir jauge de vie ( position xy, largeur, épaisseur
+        # définir jauge de vie (position xy, largeur, épaisseur)
             #bar_position = [self.rect.x + 10, self.rect.y - 10, self.pv, 5]
             #bar_back_position = [self.rect.x + 10, self.rect.y - 10, self.max_pv, 5]
         # dessiner la bar
@@ -244,15 +248,14 @@ class Monster(pygame.sprite.Sprite):
         # si collision: dégat au joueur
         else:
             self.game.player.damage(self.attack)
-
-
+            
 
 class CometFallEvent:
     
     # céer un compteur
     def __init__(self, game):
         self.percent = 0 # pourcent initial de la jauge
-        self.percent_speed = 10 # temps entre cometes
+        self.percent_speed = 10 # temps entre comètes
         self.game = game
         self.fall_mode = False
         
@@ -275,7 +278,7 @@ class CometFallEvent:
         
     def attempt_fall(self):
         # jauge pleine et 0 monstre 
-        if self.full_loaded() and len(self.game.all_monsters) == 0:
+        if self.full_loaded() and len(self.game.all_astros) == 0:
             print("Comet Fall Event !")
             self.meteor_fall()
             self.fall_mode = True # activer événement
@@ -320,8 +323,8 @@ class Comet(pygame.sprite.Sprite):
         if len(self.comet_event.all_comets) == 0:
             self.comet_event.reset_percent() # remettre barre à 0
             
-            self.comet_event.game.spawn_monster()  
-            self.comet_event.game.spawn_monster()
+            self.comet_event.game.spawn_astro()  
+            self.comet_event.game.spawn_astro()
             
     def fall(self):
         self.rect.y += self.speed
@@ -360,7 +363,7 @@ class SoundManager:
                   
 # générer la fenêtre
 pygame.display.set_caption("SPACE INVASION GAME")
-screen = pygame.display.set_mode((w, h))
+screen = pygame.display.set_mode((1080, 720))
 
 # Accueil console
 print("")
@@ -411,6 +414,7 @@ while running:
         # ajouter bannière
         screen.blit(banner, banner_rect)
         screen.blit(play_button, play_button_rect)
+
      
     # mettre à jour l'écran
     pygame.display.flip()
