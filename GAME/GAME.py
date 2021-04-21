@@ -8,9 +8,6 @@ import pygame
 pygame.mixer.init() # initialiser mixer
 pygame.font.init() # initialiser font
 
-# taille écran
-#w = 1080
-#h = 720
 
 
 class Game:
@@ -79,7 +76,7 @@ class Game:
         
         self.player.all_projectiles.draw(screen)
     
-        # appliquer images groupe monstre
+        # appliquer images groupe astronautes
         self.all_astros.draw(screen)
         
         # appliquer image groupe cometes
@@ -96,7 +93,7 @@ class Game:
     
     
     def check_collision(self, sprite, group):
-        # régler collision 
+        # régler collision ( sprite, group, dokill, collided None)
         return pygame.sprite.spritecollide(sprite, group, False, pygame.sprite.collide_mask)
     
     def spawn_astro(self):
@@ -117,10 +114,10 @@ class Player(pygame.sprite.Sprite): # class sprite: élément graphique
         
         # image joueur
         self.image = pygame.image.load('assets/p1.png')
-
-        #self.image = pygame.image.load('assets/p3.png')
         self.image = pygame.transform.scale(self.image, (140, 140))
         self.rect = self.image.get_rect()
+        
+        # position
         self.rect.x = 425
         self.rect.y = 500
     
@@ -135,7 +132,7 @@ class Player(pygame.sprite.Sprite): # class sprite: élément graphique
         pygame.draw.rect(surface, (0, 0, 0), [self.rect.x + 25, self.rect.y - 25, self.max_pv, 5])
         pygame.draw.rect(surface, (111, 210, 46), [self.rect.x + 25, self.rect.y - 25, self.pv, 5])
         
-    def launch_projectile(self):
+    def shoot_projectile(self):
         #instance classe projectile
         self.all_projectiles.add(Projectile(self)) #self: prendre coordonné player
         # jouer le son
@@ -200,13 +197,13 @@ class Astro(pygame.sprite.Sprite):
         self.game = game
         self.pv = 60
         self.max_pv = 60
-        self.attack = 0.3
+        self.attack = 0.01
         self.image = pygame.image.load('assets/a1.png')
         self.rect = self.image.get_rect()
         # lieu spawn aléatoire
         self.rect.x = 1000 + random.randint(0, 300)
         self.rect.y = 520
-        self.speed = random.randint(1, 3)
+        self.speed = random.randint(1, 1)
         self.loot_amount = 10
         
     
@@ -432,7 +429,7 @@ while running:
             
             # SPACE pour projectile
             if event.key == pygame.K_SPACE:
-                game.player.launch_projectile()
+                game.player.shoot_projectile()
             
         elif event.type == pygame.KEYUP:
             game.pressed[event.key] = False
