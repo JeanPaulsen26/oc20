@@ -17,11 +17,11 @@ class Game:
         self.all_players = pygame.sprite.Group()
         self.player = Player(self) # générer joueur
         self.all_players.add(self.player)
-        self.comet_event = CometFallEvent(self) #générer événement comet
+        self.meteor_event = MeteorEvent(self) #générer événement comet
         self.all_astros = pygame.sprite.Group() # groupe astronautes
         self.score = 0
         #self.best_score = 0
-        self.sound_manager = SoundManager()
+        self.sound_manager = Sound()
         self.font = pygame.font.Font("assets/font.ttf", 20)
         self.pressed = {} # touche activé par joueur
 
@@ -40,9 +40,9 @@ class Game:
     def game_over(self):
         # restart game
         self.all_astros = pygame.sprite.Group()
-        self.comet_event.all_comets = pygame.sprite.Group()
+        self.meteor_event.all_meteors = pygame.sprite.Group()
         self.player.pv = self.player.max_pv
-        self.comet_event.reset_percent()
+        self.meteor_event.reset_percent()
         self.is_playing = False
         self.score = 0
         self.sound_manager.play('game_over')
@@ -59,7 +59,7 @@ class Game:
         self.player.update_pv_bar(screen)
         
         # actualiser la barre d'évémenement updatebar
-        self.comet_event.update_bar(screen)
+        self.meteor_event.update_bar(screen)
         
         # appliquer projectiles en mouvement
         for projectile in self.player.all_projectiles:
@@ -71,8 +71,8 @@ class Game:
             astro.update_pv_bar(screen) # afficher health bar
             
         # chutes des cometes afficher
-        for comet in self.comet_event.all_comets:
-            comet.fall()
+        for meteor in self.meteor_event.all_meteors:
+            meteor.fall()
         
         self.player.all_projectiles.draw(screen)
     
@@ -80,7 +80,7 @@ class Game:
         self.all_astros.draw(screen)
         
         # appliquer image groupe cometes
-        self.comet_event.all_comets.draw(screen)
+        self.meteor_event.all_meteors.draw(screen)
     
         # gauche ou droite ?
         if self.pressed.get(pygame.K_RIGHT) and self.player.rect.x < 950:
@@ -211,7 +211,7 @@ class Astro(pygame.sprite.Sprite):
         # infliger les dégat
         self.pv -= amount
         
-        # vérifier si pv <= 0 : mort
+        # vérifier si pv <= 0 : MORT
         if self.pv <= 0:
             self.rect.x = 1000 + random.randint(0, 300)
             self.speed = random.randint(1, 5)
@@ -220,14 +220,14 @@ class Astro(pygame.sprite.Sprite):
             self.game.add_score(self.loot_amount)
             
             # vérifier si event bar au max et tout les monstres sont mort
-            if self.game.comet_event.full_loaded():
+            if self.game.meteor_event.loaded():
                 # retirer du jeu
                 self.game.all_astros.remove(self)
-                self.game.comet_event.attempt_fall() # pluie de comète activer
+                self.game.meteor_event.attempt_fall() # pluie de comète activer
            
             # rajouter pv au joueur
-            if self.game.player.pv <= 95:
-                self.game.player.pv += 5
+            if self.game.player.pv <= 97:
+                self.game.player.pv += 3
         
     def update_pv_bar(self, surface):
         # définir jauge de vie (position xy, largeur, épaisseur)
@@ -246,8 +246,8 @@ class Astro(pygame.sprite.Sprite):
         else:
             self.game.player.damage(self.attack)
             
-
-class CometFallEvent:
+            
+class MeteorEvent:
     
     # céer un compteur
     def __init__(self, game):
@@ -257,12 +257,12 @@ class CometFallEvent:
         self.fall_mode = False
         
         # groupe sprite cometes
-        self.all_comets = pygame.sprite.Group()
+        self.all_meteors = pygame.sprite.Group()
     
     def add_percent(self):
         self.percent += self.percent_speed / 100
         
-    def full_loaded(self):
+    def loaded(self):
         return self.percent >= 100
     
     def reset_percent(self):
@@ -270,12 +270,12 @@ class CometFallEvent:
     
     def meteor_fall(self):
         # boucle comets fall
-        for i in range(1, 35):
-            self.all_comets.add(Comet(self)) # 1er comete
+        for i in range(1, 25):
+            self.all_meteors.add(Meteor(self)) # 1er comete
         
     def attempt_fall(self):
         # jauge pleine et 0 monstre 
-        if self.full_loaded() and len(self.game.all_astros) == 0:
+        if self.loaded() and len(self.game.all_astros) == 0:
             print("Comet Fall Event !")
             self.meteor_fall()
             self.fall_mode = True # activer événement
@@ -298,30 +298,31 @@ class CometFallEvent:
             self.percent_speed * self.percent, #longueur fenetre
             10 
         ])
-        
-class Comet(pygame.sprite.Sprite):
+
+
+class Meteor(pygame.sprite.Sprite):
     
-    def __init__(self, comet_event):
+    def __init__(self, meteor_event):
         super().__init__()
         self.image = pygame.image.load('assets/comet.png')
         self.image = pygame.transform.scale(self.image, (130, 130))
         self.rect = self.image.get_rect()
         self.speed = random.randint(5, 7)
-        self.rect.x = random.randint(-30, 1000)
+        self.rect.x = random.randint(-80, 1000)
         self.rect.y = - random.randint(0, 2500)
-        self.comet_event = comet_event
+        self.meteor_event = meteor_event
     
     def remove(self):
-        self.comet_event.all_comets.remove(self)
+        self.meteor_event.all_meteors.remove(self)
         # jouer le son
-        self.comet_event.game.sound_manager.play('meteorite')
+        self.meteor_event.game.sound_manager.play('meteorite')
         
         # vérifier que nb comete = 0
-        if len(self.comet_event.all_comets) == 0:
-            self.comet_event.reset_percent() # remettre barre à 0
+        if len(self.meteor_event.all_meteors) == 0:
+            self.meteor_event.reset_percent() # remettre barre à 0
             
-            self.comet_event.game.spawn_astro()  
-            self.comet_event.game.spawn_astro()
+            self.meteor_event.game.spawn_astro()  
+            self.meteor_event.game.spawn_astro()
             
     def fall(self):
         self.rect.y += self.speed
@@ -330,21 +331,22 @@ class Comet(pygame.sprite.Sprite):
             self.remove()
             
             # boucle comete 
-            if len(self.comet_event.all_comets) == 0:
+            if len(self.meteor_event.all_meteors) == 0:
                 print("Comet Fall Event END")
                 # remettre jauge au départ
-                self.comet_event.reset_percent()
-                self.comet_event.fall_mode = False
+                self.meteor_event.reset_percent()
+                self.meteor_event.fall_mode = False
             
         # collision joueur
-        if self.comet_event.game.check_collision(
-            self, self.comet_event.game.all_players
+        if self.meteor_event.game.check_collision(
+            self, self.meteor_event.game.all_players
         ):
             print("joueur touché !")
             self.remove()
-            self.comet_event.game.player.damage(20) # dégat comete
-            
-class SoundManager:
+            self.meteor_event.game.player.damage(20) # dégat comete
+ 
+ 
+class Sound:
     
     def __init__(self):
         self.sounds = {
